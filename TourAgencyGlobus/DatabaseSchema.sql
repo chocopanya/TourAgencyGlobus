@@ -78,7 +78,7 @@ CREATE TABLE ApplicationStatuses (
     StatusName NVARCHAR(50) NOT NULL UNIQUE
 );
 GO
-
+ 
 -- 8. Таблица Заявок (из Заявки_import)
 CREATE TABLE Applications (
     ApplicationID INT PRIMARY KEY IDENTITY(1,1),

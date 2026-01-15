@@ -150,7 +150,7 @@ FROM (VALUES
 INNER JOIN Tours t ON AppImport.[Код тура] = t.TourCode
 INNER JOIN Users u ON AppImport.[Код клиента] = u.UserID;
 GO
-
+ 
 -- 8. Назначаем менеджеров для подтверждённых заявок
 PRINT 'Назначение менеджеров заявкам...';
 UPDATE Applications 
