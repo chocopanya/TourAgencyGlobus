@@ -1,112 +1,87 @@
-
-
--- 1. Создаём новую БД
-CREATE DATABASE TourAgencyDB;
+USE [TourAgencyDB]
 GO
 
-USE TourAgencyDB;
+-- Удаление старых таблиц
+IF OBJECT_ID('Applications', 'U') IS NOT NULL DROP TABLE Applications;
+IF OBJECT_ID('Tours', 'U') IS NOT NULL DROP TABLE Tours;
+IF OBJECT_ID('BusTypes', 'U') IS NOT NULL DROP TABLE BusTypes;
+IF OBJECT_ID('Countries', 'U') IS NOT NULL DROP TABLE Countries;
+IF OBJECT_ID('Users', 'U') IS NOT NULL DROP TABLE Users;
+IF OBJECT_ID('ApplicationStatuses', 'U') IS NOT NULL DROP TABLE ApplicationStatuses;
+IF OBJECT_ID('Roles', 'U') IS NOT NULL DROP TABLE Roles;
 GO
 
--- 2. Таблица Стран (из Страны_import)
-CREATE TABLE Countries (
-    CountryID INT PRIMARY KEY IDENTITY(1,1),
-    CountryCode INT NOT NULL UNIQUE,  -- Код страны из импорта
-    CountryName NVARCHAR(100) NOT NULL UNIQUE
-);
-GO
-
--- 3. Таблица Типов автобусов (из Типы_автобусов_import)
-CREATE TABLE BusTypes (
-    BusTypeID INT PRIMARY KEY IDENTITY(1,1),
-    TypeCode INT NOT NULL UNIQUE,      -- Код типа из импорта
-    TypeName NVARCHAR(50) NOT NULL UNIQUE,
-    Description NVARCHAR(255),
-    Capacity INT NOT NULL CHECK (Capacity > 0)
-);
-GO
-
--- 4. Таблица Ролей (из Пользователи_import)
+-- 1. Роли пользователей
 CREATE TABLE Roles (
     RoleID INT PRIMARY KEY IDENTITY(1,1),
-    RoleName NVARCHAR(50) NOT NULL UNIQUE
+    RoleName NVARCHAR(50) NOT NULL
 );
 GO
 
--- 5. Таблица Пользователей (из Пользователи_import)
+-- 2. Статусы заявок
+CREATE TABLE ApplicationStatuses (
+    StatusID INT PRIMARY KEY IDENTITY(1,1),
+    StatusName NVARCHAR(50) NOT NULL
+);
+GO
+
+-- 3. Страны
+CREATE TABLE Countries (
+    CountryID INT PRIMARY KEY IDENTITY(1,1),
+    CountryName NVARCHAR(100) NOT NULL
+);
+GO
+
+-- 4. Типы автобусов
+CREATE TABLE BusTypes (
+    BusTypeID INT PRIMARY KEY IDENTITY(1,1),
+    TypeName NVARCHAR(50) NOT NULL,
+    Description NVARCHAR(255),
+    Capacity INT NOT NULL
+);
+GO
+
+-- 5. Пользователи
 CREATE TABLE Users (
     UserID INT PRIMARY KEY IDENTITY(1,1),
     RoleID INT NOT NULL,
     FullName NVARCHAR(200) NOT NULL,
-    Login NVARCHAR(100) NOT NULL UNIQUE,
+    Login NVARCHAR(100) NOT NULL,
     PasswordHash NVARCHAR(255) NOT NULL,
-    Email NVARCHAR(255),
-    Phone NVARCHAR(20),
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    -- Внешние ключи
-    FOREIGN KEY (RoleID) REFERENCES Roles(RoleID) ON DELETE CASCADE,
-    -- Проверка email
-    CHECK (Email LIKE '%@%.%')
+    FOREIGN KEY (RoleID) REFERENCES Roles(RoleID)
 );
 GO
 
--- 6. Таблица Туров (из Туры_import)
+-- 6. Туры
 CREATE TABLE Tours (
     TourID INT PRIMARY KEY IDENTITY(1,1),
-    TourCode INT NOT NULL UNIQUE,          -- Код тура из импорта
     Title NVARCHAR(200) NOT NULL,
     CountryID INT NOT NULL,
-    DurationDays INT NOT NULL CHECK (DurationDays > 0),
+    DurationDays INT NOT NULL,
     StartDate DATE NOT NULL,
-    Price DECIMAL(10,2) NOT NULL CHECK (Price > 0),
+    Price DECIMAL(10,2) NOT NULL,
+    Discount DECIMAL(5,2) NOT NULL DEFAULT 0,
     BusTypeID INT NOT NULL,
-    Capacity INT NOT NULL CHECK (Capacity > 0),
+    Capacity INT NOT NULL,
     AvailableSeats INT NOT NULL DEFAULT 0,
     PhotoFileName NVARCHAR(255),
-    IsActive BIT DEFAULT 1,
-    -- Внешние ключи
-    FOREIGN KEY (CountryID) REFERENCES Countries(CountryID) ON DELETE CASCADE,
-    FOREIGN KEY (BusTypeID) REFERENCES BusTypes(BusTypeID),
-    -- Проверки
-    CHECK (AvailableSeats <= Capacity),
-    CHECK (AvailableSeats >= 0)
+    FOREIGN KEY (CountryID) REFERENCES Countries(CountryID),
+    FOREIGN KEY (BusTypeID) REFERENCES BusTypes(BusTypeID)
 );
 GO
 
--- 7. Таблица Статусов заявок (из Заявки_import)
-CREATE TABLE ApplicationStatuses (
-    StatusID INT PRIMARY KEY IDENTITY(1,1),
-    StatusName NVARCHAR(50) NOT NULL UNIQUE
-);
-GO
- 
--- 8. Таблица Заявок (из Заявки_import)
+-- 7. Заявки
 CREATE TABLE Applications (
     ApplicationID INT PRIMARY KEY IDENTITY(1,1),
-    ApplicationCode INT NOT NULL UNIQUE,    -- Код заявки из импорта
     TourID INT NOT NULL,
     ClientID INT NOT NULL,
     ApplicationDate DATE NOT NULL DEFAULT GETDATE(),
     StatusID INT NOT NULL,
-    PersonsCount INT NOT NULL CHECK (PersCount > 0),
-    TotalPrice DECIMAL(10,2) NOT NULL CHECK (TotalPrice > 0),
+    PersonsCount INT NOT NULL,
+    TotalPrice DECIMAL(10,2) NOT NULL,
     Comment NVARCHAR(1000),
-    ManagerID INT,
-    -- Внешние ключи
-    FOREIGN KEY (TourID) REFERENCES Tours(TourID) ON DELETE CASCADE,
-    FOREIGN KEY (ClientID) REFERENCES Users(UserID) ON DELETE CASCADE,
-    FOREIGN KEY (StatusID) REFERENCES ApplicationStatuses(StatusID),
-    FOREIGN KEY (ManagerID) REFERENCES Users(UserID) ON DELETE SET NULL,
-    -- Проверка даты
-    CHECK (ApplicationDate <= GETDATE())
+    FOREIGN KEY (TourID) REFERENCES Tours(TourID),
+    FOREIGN KEY (ClientID) REFERENCES Users(UserID),
+    FOREIGN KEY (StatusID) REFERENCES ApplicationStatuses(StatusID)
 );
 GO
-
--- 9. Индексы для ускорения поиска
-CREATE INDEX IX_Tours_StartDate ON Tours(StartDate);
-CREATE INDEX IX_Tours_Country ON Tours(CountryID);
-CREATE INDEX IX_Applications_Status ON Applications(StatusID);
-CREATE INDEX IX_Applications_Client ON Applications(ClientID);
-CREATE INDEX IX_Users_Login ON Users(Login);
-GO
-
-PRINT 'База данных создана успешно!';

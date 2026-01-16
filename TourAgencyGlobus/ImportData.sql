@@ -1,172 +1,114 @@
-
-USE TourAgencyDB;
+USE [TourAgencyDB]
 GO
 
--- 1. Импорт стран (из Страны_import)
-PRINT 'Импорт стран...';
-INSERT INTO Countries (CountryCode, CountryName) VALUES
-(1, 'Италия'),
-(2, 'Франция'),
-(3, 'Германия'),
-(4, 'Австрия'),
-(5, 'Чехия'),
-(6, 'Испания'),
-(7, 'Польша');
+-- Очистка данных
+DELETE FROM Applications;
+DELETE FROM Tours;
+DELETE FROM BusTypes;
+DELETE FROM Countries;
+DELETE FROM Users;
+DELETE FROM ApplicationStatuses;
+DELETE FROM Roles;
 GO
 
--- 2. Импорт типов автобусов (из Типы_автобусов_import)
-PRINT 'Импорт типов автобусов...';
-INSERT INTO BusTypes (TypeCode, TypeName, Description, Capacity) VALUES
-(1, 'Стандарт', 'Автобус туристического класса', 45),
-(2, 'Комфорт', 'Автобус повышенной комфортности', 35),
-(3, 'Минивэн', 'Для небольших групп', 16),
-(4, 'Премиум', 'Люкс-класс с индивидуальным сервисом', 20),
-(5, 'Двухэтажный', 'Туристический даблдекер', 70),
-(6, 'Спальный', 'Для ночных переездов', 30),
-(7, 'Гибридный', 'Экологичный, гибридный двигатель', 40),
-(8, 'VIP-трансфер', 'Микроавтобус бизнес-класса', 8),
-(9, 'Семейный', 'С детскими креслами', 25);
+-- Сброс идентификаторов
+DBCC CHECKIDENT ('Roles', RESEED, 0);
+DBCC CHECKIDENT ('ApplicationStatuses', RESEED, 0);
+DBCC CHECKIDENT ('Countries', RESEED, 0);
+DBCC CHECKIDENT ('BusTypes', RESEED, 0);
+DBCC CHECKIDENT ('Users', RESEED, 0);
+DBCC CHECKIDENT ('Tours', RESEED, 0);
+DBCC CHECKIDENT ('Applications', RESEED, 0);
 GO
 
--- 3. Импорт ролей (из Пользователи_import)
-PRINT 'Импорт ролей...';
-INSERT INTO Roles (RoleName) VALUES
-('Администратор'),
-('Менеджер'),
-('Авторизированный клиент'),
-('Гость');  -- Добавляем гостя для полноты
+-- 1. Роли
+INSERT INTO Roles (RoleName) VALUES 
+(N'Администратор'),
+(N'Менеджер'),
+(N'Авторизированный клиент');
 GO
 
--- 4. Импорт пользователей (из Пользователи_import)
-PRINT 'Импорт пользователей...';
-INSERT INTO Users (RoleID, FullName, Login, PasswordHash, Email) 
-SELECT 
-    CASE 
-        WHEN Роль = 'Администратор' THEN 1
-        WHEN Роль = 'Менеджер' THEN 2
-        WHEN Роль = 'Авторизированный клиент' THEN 3
-        ELSE 4
-    END,
-    ФИО,
-    Логин,
-    Пароль + '_hashed',  -- В реальности пароли должны быть хешированы!
-    Логин  -- Используем логин как email
-FROM (VALUES
-    ('Администратор', 'Петров Иван Сергеевич', 'admin@globus.ru', '7f8d2a'),
-    ('Менеджер', 'Сидорова Анна Владимировна', 'manager@globus.ru', '9k3l5m'),
-    ('Менеджер', 'Козлов Дмитрий Алексеевич', 'd.kozlov@globus.ru', '4p6q8r'),
-    ('Авторизированный клиент', 'Иванова Мария Петровна', 'm.ivanova@mail.ru', '1a2b3c'),
-    ('Авторизированный клиент', 'Смирнов Алексей Викторович', 'a.smirnov@yandex.ru', '5d6e7f'),
-    ('Авторизированный клиент', 'Новикова Елена Олеговна', 'e.novikova@gmail.com', '8g9h0i'),
-    ('Авторизированный клиент', 'Волков Павел Александрович', 'p.volkov@mail.ru', 'k2l3m4'),
-    ('Авторизированный клиент', 'Крылова Ольга Сергеевна', 'o.krylova@yandex.ru', 'n5o6p7'),
-    ('Авторизированный клиент', 'Борисов Артем Игоревич', 'a.borisov@gmail.com', 'q8r9s0'),
-    ('Авторизированный клиент', 'Зотова Виктория Дмитриевна', 'v.zotova@mail.ru', 't1u2v3'),
-    ('Авторизированный клиент', 'Громов Михаил Петрович', 'm.gromov@yandex.ru', 'w4x5y6'),
-    ('Администратор', 'Морозова Анастасия Андреевна', 'a.morozova@globus.ru', 'z7a8b9'),
-    ('Менеджер', 'Тихонов Сергей Владимирович', 's.tikhonov@globus.ru', 'c0d1e2')
-) AS ImportData(Роль, ФИО, Логин, Пароль);
+-- 2. Статусы
+INSERT INTO ApplicationStatuses (StatusName) VALUES 
+(N'Новая'),
+(N'В обработке'),
+(N'Подтверждена'),
+(N'Отменена');
 GO
 
--- 5. Импорт статусов заявок (из Заявки_import)
-PRINT 'Импорт статусов заявок...';
-INSERT INTO ApplicationStatuses (StatusName) VALUES
-('Новая'),
-('В обработке'),
-('Подтверждена'),
-('Отменена');
+-- 3. Страны
+INSERT INTO Countries (CountryName) VALUES 
+(N'Италия'),
+(N'Франция'),
+(N'Германия'),
+(N'Австрия'),
+(N'Чехия'),
+(N'Испания'),
+(N'Польша');
 GO
 
--- 6. Импорт туров (из Туры_import)
-PRINT 'Импорт туров...';
-INSERT INTO Tours (TourCode, Title, CountryID, DurationDays, StartDate, Price, BusTypeID, Capacity, AvailableSeats, PhotoFileName)
-SELECT 
-    [Код тура],
-    [Наименование тура],
-    c.CountryID,
-    [Продолжительность (дней)],
-    CONVERT(DATE, [Дата начала], 104),  -- конвертация из dd.mm.yyyy
-    [Стоимость (руб.)],
-    CASE [Тип автобуса]
-        WHEN 'Стандарт' THEN 1
-        WHEN 'Комфорт' THEN 2
-        WHEN 'Минивэн' THEN 3
-        WHEN 'Премиум' THEN 4
-        ELSE 1
-    END,
-    [Вместимость],
-    [Свободных мест],
-    [Имя файла фото]
-FROM (VALUES
-    (1, 'Романтическая Италия: Рим, Флоренция, Венеция', 'Италия', 10, '15.06.2024', 85000, 'Комфорт', 35, 12, 'italy_tour.png'),
-    (2, 'Париж и замки Луары', 'Франция', 7, '22.07.2024', 92500, 'Стандарт', 45, 5, 'france_tour.png'),
-    (3, 'Австрийские Альпы: Зальцбург и Инсбрук', 'Австрия', 8, '10.08.2024', 78300, 'Комфорт', 35, 20, 'austria_tour.png'),
-    (4, 'Берлин, Дрезден, Мюнхен', 'Германия', 9, '05.09.2024', 88900, 'Стандарт', 45, 0, 'germany_tour.png'),
-    (5, 'Прага и Карловы Вары', 'Чехия', 6, '12.10.2024', 65400, 'Минивэн', 16, 10, 'czech_tour.png'),
-    (6, 'Мадрид и Барселона', 'Испания', 8, '20.08.2024', 91000, 'Стандарт', 45, 18, 'spain_tour.png'),
-    (7, 'Краков и Варшава', 'Польша', 5, '05.07.2024', 52000, 'Минивэн', 16, 8, 'poland_tour.png'),
-    (8, 'Вена и Будапешт', 'Австрия', 7, '15.09.2024', 74500, 'Комфорт', 35, 25, 'vienna_tour.png'),
-    (9, 'Амстердам и Брюссель', 'Нидерланды', 6, '25.10.2024', 69000, 'Стандарт', 45, 15, 'amsterdam_tour.png'),
-    (10, 'Стокгольм и Хельсинки', 'Швеция', 9, '12.08.2024', 105000, 'Премиум', 20, 6, 'sweden_tour.png')
-) AS TourImport([Код тура], [Наименование тура], Страна, [Продолжительность (дней)], [Дата начала], [Стоимость (руб.)], [Тип автобуса], [Вместимость], [Свободных мест], [Имя файла фото])
-INNER JOIN Countries c ON TourImport.Страна = c.CountryName;
+-- 4. Типы автобусов
+INSERT INTO BusTypes (TypeName, Description, Capacity) VALUES
+(N'Стандарт', N'Автобус туристического класса', 45),
+(N'Комфорт', N'Автобус повышенной комфортности', 35),
+(N'Минивэн', N'Для небольших групп', 16);
 GO
 
--- 7. Импорт заявок (из Заявки_import)
-PRINT 'Импорт заявок...';
-INSERT INTO Applications (ApplicationCode, TourID, ClientID, ApplicationDate, StatusID, PersonsCount, TotalPrice, Comment)
-SELECT 
-    [Код заявки],
-    t.TourID,
-    u.UserID,
-    CONVERT(DATE, [Дата заявки], 104),  -- конвертация из dd.mm.yyyy
-    CASE [Статус заявки]
-        WHEN 'Новая' THEN 1
-        WHEN 'В обработке' THEN 2
-        WHEN 'Подтверждена' THEN 3
-        WHEN 'Отменена' THEN 4
-        ELSE 1
-    END,
-    [Количество человек],
-    [Общая стоимость (руб.)],
-    [Комментарий]
-FROM (VALUES
-    (1, 1, 4, '10.05.2024', 'Подтверждена', 2, 170000, 'Пожелание: номера рядом'),
-    (2, 2, 5, '12.05.2024', 'Новая', 1, 92500, NULL),
-    (3, 3, 6, '15.05.2024', 'Подтверждена', 4, 313200, 'Юбилейная поездка'),
-    (4, 5, 4, '18.05.2024', 'Отменена', 3, 196200, 'Изменились планы'),
-    (5, 1, 5, '20.05.2024', 'Новая', 2, 170000, NULL),
-    (6, 6, 7, '22.05.2024', 'Подтверждена', 2, 182000, NULL),
-    (7, 7, 8, '25.05.2024', 'В обработке', 1, 52000, NULL),
-    (8, 8, 9, '28.05.2024', 'Подтверждена', 3, 223500, 'Поздний заезд'),
-    (9, 9, 10, '30.05.2024', 'Новая', 4, 276000, NULL),
-    (10, 10, 4, '01.06.2024', 'Подтверждена', 2, 210000, 'VIP-обслуживание'),
-    (11, 3, 11, '03.06.2024', 'Отменена', 5, 391500, NULL),
-    (12, 4, 12, '05.06.2024', 'Новая', 1, 88900, NULL),
-    (13, 2, 7, '07.06.2024', 'Подтверждена', 3, 277500, NULL),
-    (14, 5, 8, '10.06.2024', 'В обработке', 2, 130800, NULL),
-    (15, 1, 9, '12.06.2024', 'Новая', 4, 340000, 'Семейный тур')
-) AS AppImport([Код заявки], [Код тура], [Код клиента], [Дата заявки], [Статус заявки], [Количество человек], [Общая стоимость (руб.)], [Комментарий])
-INNER JOIN Tours t ON AppImport.[Код тура] = t.TourCode
-INNER JOIN Users u ON AppImport.[Код клиента] = u.UserID;
-GO
- 
--- 8. Назначаем менеджеров для подтверждённых заявок
-PRINT 'Назначение менеджеров заявкам...';
-UPDATE Applications 
-SET ManagerID = (SELECT UserID FROM Users WHERE FullName = 'Сидорова Анна Владимировна')
-WHERE StatusID = 3;  -- Подтверждённые заявки
+-- 5. Пользователи
+INSERT INTO Users (RoleID, FullName, Login, PasswordHash) VALUES
+(1, N'Петров Иван Сергеевич', 'admin@globus.ru', '7f8d2a'),
+(2, N'Сидорова Анна Владимировна', 'manager@globus.ru', '9k3l5m'),
+(2, N'Козлов Дмитрий Алексеевич', 'd.kozlov@globus.ru', '4p6q8r'),
+(3, N'Иванова Мария Петровна', 'm.ivanova@mail.ru', '1a2b3c'),
+(3, N'Смирнов Алексей Викторович', 'a.smirnov@yandex.ru', '5d6e7f'),
+(3, N'Новикова Елена Олеговна', 'e.novikova@gmail.com', '8g9h0i'),
+(3, N'Волков Павел Александрович', 'p.volkov@mail.ru', 'k2l3m4'),
+(3, N'Крылова Ольга Сергеевна', 'o.krylova@yandex.ru', 'n5o6p7'),
+(3, N'Борисов Артем Игоревич', 'a.borisov@gmail.com', 'q8r9s0'),
+(3, N'Зотова Виктория Дмитриевна', 'v.zotova@mail.ru', 't1u2v3'),
+(3, N'Громов Михаил Петрович', 'm.gromov@yandex.ru', 'w4x5y6'),
+(1, N'Морозова Анастасия Андреевна', 'a.morozova@globus.ru', 'z7a8b9'),
+(2, N'Тихонов Сергей Владимирович', 's.tikhonov@globus.ru', 'c0d1e2');
 GO
 
-PRINT '============================================';
-PRINT 'ИМПОРТ ДАННЫХ УСПЕШНО ЗАВЕРШЁН!';
-PRINT 'Загружено:';
-PRINT '- ' + CAST((SELECT COUNT(*) FROM Countries) AS VARCHAR) + ' стран';
-PRINT '- ' + CAST((SELECT COUNT(*) FROM BusTypes) AS VARCHAR) + ' типов автобусов';
-PRINT '- ' + CAST((SELECT COUNT(*) FROM Roles) AS VARCHAR) + ' ролей';
-PRINT '- ' + CAST((SELECT COUNT(*) FROM Users) AS VARCHAR) + ' пользователей';
-PRINT '- ' + CAST((SELECT COUNT(*) FROM ApplicationStatuses) AS VARCHAR) + ' статусов';
-PRINT '- ' + CAST((SELECT COUNT(*) FROM Tours) AS VARCHAR) + ' туров';
-PRINT '- ' + CAST((SELECT COUNT(*) FROM Applications) AS VARCHAR) + ' заявок';
-PRINT '============================================';
+-- 6. Туры
+INSERT INTO Tours (Title, CountryID, DurationDays, StartDate, Price, Discount, BusTypeID, Capacity, AvailableSeats, PhotoFileName) VALUES
+(N'Романтическая Италия: Рим, Флоренция, Венеция', 1, 10, '2024-06-15', 85000.00, 15.00, 2, 35, 12, 'italy.jpg'),
+(N'Париж и замки Луары', 2, 7, '2024-07-22', 92500.00, 10.00, 1, 45, 5, 'france.jpg'),
+(N'Австрийские Альпы: Зальцбург и Инсбрук', 4, 8, '2024-08-10', 78300.00, 5.00, 2, 35, 20, 'austria.jpg'),
+(N'Берлин, Дрезден, Мюнхен', 3, 9, '2024-09-05', 88900.00, 20.00, 1, 45, 0, 'germany.jpg'),
+(N'Прага и Карловы Вары', 5, 6, '2024-10-12', 65400.00, 0.00, 3, 16, 10, 'czech.jpg'),
+(N'Мадрид и Барселона', 6, 8, '2024-08-20', 91000.00, 12.00, 1, 45, 18, 'spain.jpg'),
+(N'Краков и Варшава', 7, 5, '2024-07-05', 52000.00, 25.00, 3, 16, 8, 'poland.jpg'),
+(N'Вена и Будапешт', 4, 7, '2024-09-15', 74500.00, 8.00, 2, 35, 25, 'vienna.jpg'),
+(N'Амстердам и Брюссель', 1, 6, '2024-10-25', 69000.00, 0.00, 1, 45, 15, 'amsterdam.jpg'),
+(N'Стокгольм и Хельсинки', 1, 9, '2024-08-12', 105000.00, 30.00, 2, 35, 6, 'sweden.jpg');
+GO
+
+-- 7. Заявки
+INSERT INTO Applications (TourID, ClientID, ApplicationDate, StatusID, PersonsCount, TotalPrice, Comment) VALUES
+(1, 4, '2024-05-10', 3, 2, 170000.00, N'Пожелание: номера рядом'),
+(2, 5, '2024-05-12', 1, 1, 92500.00, NULL),
+(3, 6, '2024-05-15', 3, 4, 313200.00, N'Юбилейная поездка'),
+(5, 4, '2024-05-20', 1, 2, 130800.00, NULL),
+(6, 7, '2024-05-22', 3, 2, 182000.00, NULL),
+(7, 8, '2024-05-25', 2, 1, 52000.00, NULL),
+(8, 9, '2024-05-28', 3, 3, 223500.00, N'Поздний заезд'),
+(9, 10, '2024-05-30', 1, 4, 276000.00, NULL),
+(10, 4, '2024-06-01', 3, 2, 210000.00, N'VIP-обслуживание'),
+(3, 11, '2024-06-03', 4, 5, 391500.00, NULL),
+(4, 12, '2024-06-05', 1, 1, 88900.00, NULL),
+(2, 7, '2024-06-07', 3, 3, 277500.00, NULL),
+(5, 8, '2024-06-10', 2, 2, 130800.00, NULL),
+(1, 9, '2024-06-12', 1, 4, 340000.00, N'Семейный тур');
+GO
+
+-- Проверка
+SELECT 'Roles' as TableName, COUNT(*) as Count FROM Roles
+UNION ALL SELECT 'ApplicationStatuses', COUNT(*) FROM ApplicationStatuses
+UNION ALL SELECT 'Countries', COUNT(*) FROM Countries
+UNION ALL SELECT 'BusTypes', COUNT(*) FROM BusTypes
+UNION ALL SELECT 'Users', COUNT(*) FROM Users
+UNION ALL SELECT 'Tours', COUNT(*) FROM Tours
+UNION ALL SELECT 'Applications', COUNT(*) FROM Applications;
 GO
