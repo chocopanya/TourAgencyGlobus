@@ -170,9 +170,13 @@ namespace TourAgencyGlobus.Services
         {
             try
             {
-                return _context.Users
+                // Берем всех пользователей и фильтруем уже в памяти
+                var allUsers = _context.Users
                     .AsNoTracking()
-                    .FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase));
+                    .ToList();
+
+                return allUsers.FirstOrDefault(u =>
+                    u.Login.Equals(login, StringComparison.OrdinalIgnoreCase));
             }
             catch (Exception ex)
             {

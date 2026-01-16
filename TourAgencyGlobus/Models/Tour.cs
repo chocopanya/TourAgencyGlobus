@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Windows.Media;
+using System.IO;
 
 namespace TourAgencyGlobus.Models
 {
@@ -30,6 +32,9 @@ namespace TourAgencyGlobus.Models
         [Column("Price")]
         public decimal Price { get; set; }
 
+        [Column("Discount")]
+        public decimal Discount { get; set; } = 0;
+
         [Column("BusTypeID")]
         public int BusTypeId { get; set; }
 
@@ -44,9 +49,6 @@ namespace TourAgencyGlobus.Models
 
         [Column("PhotoFileName")]
         public string PhotoFileName { get; set; }
-
-        [Column("Discount", TypeName = "decimal(5,2)")]
-        public decimal Discount { get; set; } = 0;
 
         // Вычисляемые свойства
         [NotMapped]
@@ -64,6 +66,56 @@ namespace TourAgencyGlobus.Models
         [NotMapped]
         public double OccupancyPercent => TotalSeats > 0 ?
             ((double)(TotalSeats - FreeSeats) / TotalSeats) * 100 : 0;
+
+        [NotMapped]
+        public bool HasAvailableSeats => FreeSeats > 0;
+
+        [NotMapped]
+        public string PhotoPath
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(PhotoFileName))
+                {
+                    string[] possiblePaths = {
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", PhotoFileName),
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin", "Debug", "Images", PhotoFileName),
+                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin", "Release", "Images", PhotoFileName),
+                        Path.Combine(Environment.CurrentDirectory, "Images", PhotoFileName)
+                    };
+
+                    foreach (string path in possiblePaths)
+                    {
+                        if (File.Exists(path))
+                        {
+                            return path;
+                        }
+                    }
+                }
+
+                // Путь к заглушке
+                string placeholderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "placeholder.jpg");
+                if (File.Exists(placeholderPath))
+                {
+                    return placeholderPath;
+                }
+
+                return null;
+            }
+        }
+
+        [NotMapped]
+        public Brush OccupancyColor
+        {
+            get
+            {
+                if (OccupancyPercent < 50)
+                    return new SolidColorBrush(Color.FromRgb(76, 175, 80));
+                if (OccupancyPercent < 80)
+                    return new SolidColorBrush(Color.FromRgb(255, 193, 7));
+                return new SolidColorBrush(Color.FromRgb(244, 67, 54));
+            }
+        }
 
         public virtual ICollection<TourApplication> Applications { get; set; } = new List<TourApplication>();
     }

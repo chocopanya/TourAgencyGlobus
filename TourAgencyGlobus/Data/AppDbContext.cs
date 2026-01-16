@@ -5,11 +5,6 @@ namespace TourAgencyGlobus.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }
-
-        // Конструктор без параметров для ручного создания
         public AppDbContext() : base()
         {
         }
@@ -30,7 +25,9 @@ namespace TourAgencyGlobus.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Настройки для Tour
+            base.OnModelCreating(modelBuilder);
+
+            // Tour
             modelBuilder.Entity<Tour>(entity =>
             {
                 entity.ToTable("Tours");
@@ -38,24 +35,13 @@ namespace TourAgencyGlobus.Data
                 entity.Property(e => e.Id).HasColumnName("TourID");
 
                 entity.Property(t => t.Price)
-                    .HasColumnType("decimal(5,2)");
+                    .HasColumnType("decimal(10,2)");
 
                 entity.Property(t => t.Discount)
                     .HasColumnType("decimal(5,2)");
-
-                // Связи
-                entity.HasOne(t => t.Country)
-                    .WithMany(c => c.Tours)
-                    .HasForeignKey(t => t.CountryId)
-                    .HasConstraintName("FK_Tours_Countries");
-
-                entity.HasOne(t => t.BusType)
-                    .WithMany(b => b.Tours)
-                    .HasForeignKey(t => t.BusTypeId)
-                    .HasConstraintName("FK_Tours_BusTypes");
             });
 
-            // Настройки для User
+            // User
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("Users");
@@ -63,7 +49,7 @@ namespace TourAgencyGlobus.Data
                 entity.Property(e => e.Id).HasColumnName("UserID");
             });
 
-            // Настройки для Country
+            // Country
             modelBuilder.Entity<Country>(entity =>
             {
                 entity.ToTable("Countries");
@@ -71,7 +57,7 @@ namespace TourAgencyGlobus.Data
                 entity.Property(e => e.Id).HasColumnName("CountryID");
             });
 
-            // Настройки для BusType
+            // BusType
             modelBuilder.Entity<BusType>(entity =>
             {
                 entity.ToTable("BusTypes");
@@ -79,7 +65,7 @@ namespace TourAgencyGlobus.Data
                 entity.Property(e => e.Id).HasColumnName("BusTypeID");
             });
 
-            // Настройки для TourApplication
+            // TourApplication
             modelBuilder.Entity<TourApplication>(entity =>
             {
                 entity.ToTable("Applications");
@@ -88,17 +74,6 @@ namespace TourAgencyGlobus.Data
 
                 entity.Property(a => a.TotalCost)
                     .HasColumnType("decimal(10,2)");
-
-                // Связи
-                entity.HasOne(a => a.Tour)
-                    .WithMany(t => t.Applications)
-                    .HasForeignKey(a => a.TourId)
-                    .HasConstraintName("FK_Applications_Tours");
-
-                entity.HasOne(a => a.Client)
-                    .WithMany(u => u.Applications)
-                    .HasForeignKey(a => a.ClientId)
-                    .HasConstraintName("FK_Applications_Users");
             });
         }
     }
