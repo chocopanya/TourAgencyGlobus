@@ -24,7 +24,10 @@ namespace TourAgencyGlobus.Models
         public string Password { get; set; }
 
         [NotMapped]
-        public bool IsManager => RoleId == 1 || RoleId == 2; // Администратор или менеджер
+        public bool IsManager
+        {
+            get { return RoleId == 1 || RoleId == 2; } // Администратор или менеджер
+        }
 
         public virtual ICollection<TourApplication> Applications { get; set; } = new List<TourApplication>();
     }

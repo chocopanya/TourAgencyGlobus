@@ -34,14 +34,15 @@ namespace TourAgencyGlobus.Models
         {
             get
             {
-                switch (StatusId)
-                {
-                    case 1: return "Новая";
-                    case 2: return "В обработке";
-                    case 3: return "Подтверждена";
-                    case 4: return "Отменена";
-                    default: return "Неизвестно";
-                }
+                if (StatusId == 1)
+                    return "Новая";
+                if (StatusId == 2)
+                    return "В обработке";
+                if (StatusId == 3)
+                    return "Подтверждена";
+                if (StatusId == 4)
+                    return "Отменена";
+                return "Неизвестно";
             }
         }
 

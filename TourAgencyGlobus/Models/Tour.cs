@@ -52,23 +52,59 @@ namespace TourAgencyGlobus.Models
 
         // Вычисляемые свойства
         [NotMapped]
-        public decimal FinalPrice => Price * (1 - Discount / 100);
+        public decimal FinalPrice
+        {
+            get { return Price * (1 - Discount / 100); }
+        }
 
         [NotMapped]
-        public bool IsSpecialOffer => Discount > 15;
+        public bool IsSpecialOffer
+        {
+            get { return Discount > 15; }
+        }
 
         [NotMapped]
-        public bool IsFewSeats => TotalSeats > 0 && (double)FreeSeats / TotalSeats < 0.1;
+        public bool IsFewSeats
+        {
+            get
+            {
+                if (TotalSeats > 0)
+                {
+                    double occupiedRatio = (double)FreeSeats / TotalSeats;
+                    return occupiedRatio < 0.1;
+                }
+                return false;
+            }
+        }
 
         [NotMapped]
-        public bool IsStartingSoon => (StartDate - DateTime.Now).TotalDays < 7;
+        public bool IsStartingSoon
+        {
+            get
+            {
+                TimeSpan timeUntilStart = StartDate - DateTime.Now;
+                return timeUntilStart.TotalDays < 7;
+            }
+        }
 
         [NotMapped]
-        public double OccupancyPercent => TotalSeats > 0 ?
-            ((double)(TotalSeats - FreeSeats) / TotalSeats) * 100 : 0;
+        public double OccupancyPercent
+        {
+            get
+            {
+                if (TotalSeats > 0)
+                {
+                    return ((double)(TotalSeats - FreeSeats) / TotalSeats) * 100;
+                }
+                return 0;
+            }
+        }
 
         [NotMapped]
-        public bool HasAvailableSeats => FreeSeats > 0;
+        public bool HasAvailableSeats
+        {
+            get { return FreeSeats > 0; }
+        }
 
         [NotMapped]
         public string PhotoPath
@@ -109,9 +145,10 @@ namespace TourAgencyGlobus.Models
         {
             get
             {
-                if (OccupancyPercent < 50)
+                double occupancy = OccupancyPercent;
+                if (occupancy < 50)
                     return new SolidColorBrush(Color.FromRgb(76, 175, 80));
-                if (OccupancyPercent < 80)
+                if (occupancy < 80)
                     return new SolidColorBrush(Color.FromRgb(255, 193, 7));
                 return new SolidColorBrush(Color.FromRgb(244, 67, 54));
             }
