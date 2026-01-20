@@ -61,6 +61,26 @@ namespace TourAgencyGlobus.Services
             }
         }
 
+        public bool UpdateTourSeats(int tourId, int seatsChange)
+        {
+            try
+            {
+                var tour = _context.Tours.Find(tourId);
+                if (tour != null)
+                {
+                    tour.FreeSeats += seatsChange;
+                    _context.SaveChanges();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка обновления мест: {ex.Message}", "Ошибка");
+                return false;
+            }
+        }
+
         public bool AddTour(Tour tour)
         {
             try
@@ -80,14 +100,9 @@ namespace TourAgencyGlobus.Services
         {
             try
             {
-                var existingTour = _context.Tours.Find(tour.Id);
-                if (existingTour != null)
-                {
-                    _context.Entry(existingTour).CurrentValues.SetValues(tour);
-                    _context.SaveChanges();
-                    return true;
-                }
-                return false;
+                _context.Entry(tour).State = EntityState.Modified;
+                _context.SaveChanges();
+                return true;
             }
             catch (Exception ex)
             {
@@ -166,17 +181,30 @@ namespace TourAgencyGlobus.Services
             }
         }
 
+        public List<User> GetClients()
+        {
+            try
+            {
+                return _context.Users
+                    .Where(u => u.RoleId == 3) // Только клиенты
+                    .AsNoTracking()
+                    .OrderBy(u => u.FullName)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки клиентов: {ex.Message}", "Ошибка");
+                return new List<User>();
+            }
+        }
+
         public User GetUserByLogin(string login)
         {
             try
             {
-                // Берем всех пользователей и фильтруем уже в памяти
-                var allUsers = _context.Users
+                return _context.Users
                     .AsNoTracking()
-                    .ToList();
-
-                return allUsers.FirstOrDefault(u =>
-                    u.Login.Equals(login, StringComparison.OrdinalIgnoreCase));
+                    .FirstOrDefault(u => u.Login.Equals(login));
             }
             catch (Exception ex)
             {
@@ -201,6 +229,157 @@ namespace TourAgencyGlobus.Services
             {
                 MessageBox.Show($"Ошибка загрузки заявок: {ex.Message}", "Ошибка");
                 return new List<TourApplication>();
+            }
+        }
+
+        public List<TourApplication> GetApplicationsFiltered(string searchText = "", string statusFilter = "Все")
+        {
+            try
+            {
+                var query = _context.Applications
+                    .Include(a => a.Tour)
+                    .Include(a => a.Client)
+                    .AsNoTracking();
+
+                // Фильтрация по поиску
+                if (!string.IsNullOrEmpty(searchText))
+                {
+                    query = query.Where(a =>
+                        a.Id.ToString().Contains(searchText) ||
+                        a.Client.FullName.Contains(searchText) ||
+                        a.Tour.Name.Contains(searchText));
+                }
+
+                // Фильтрация по статусу
+                if (statusFilter != "Все")
+                {
+                    int statusId = statusFilter switch
+                    {
+                        "Новая" => 1,
+                        "В обработке" => 2,
+                        "Подтверждена" => 3,
+                        "Отменена" => 4,
+                        _ => 0
+                    };
+
+                    if (statusId > 0)
+                    {
+                        query = query.Where(a => a.StatusId == statusId);
+                    }
+                }
+
+                return query.OrderByDescending(a => a.ApplicationDate).ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка фильтрации заявок: {ex.Message}", "Ошибка");
+                return new List<TourApplication>();
+            }
+        }
+
+        public TourApplication GetApplicationById(int id)
+        {
+            try
+            {
+                return _context.Applications
+                    .Include(a => a.Tour)
+                    .Include(a => a.Client)
+                    .AsNoTracking()
+                    .FirstOrDefault(a => a.Id == id);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки заявки: {ex.Message}", "Ошибка");
+                return null;
+            }
+        }
+
+        public bool AddApplication(TourApplication application)
+        {
+            try
+            {
+                _context.Applications.Add(application);
+                _context.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка добавления заявки: {ex.Message}", "Ошибка");
+                return false;
+            }
+        }
+
+        public bool UpdateApplication(TourApplication application)
+        {
+            try
+            {
+                var existingApp = _context.Applications.Find(application.Id);
+                if (existingApp != null)
+                {
+                    // Проверяем изменение статуса на "Подтверждена"
+                    if (existingApp.StatusId != 3 && application.StatusId == 3)
+                    {
+                        var tour = _context.Tours.Find(application.TourId);
+                        if (tour != null && tour.FreeSeats < application.NumberOfPeople)
+                        {
+                            MessageBox.Show($"Недостаточно свободных мест! Доступно: {tour.FreeSeats}, требуется: {application.NumberOfPeople}", "Ошибка");
+                            return false;
+                        }
+
+                        // Уменьшаем количество свободных мест
+                        tour.FreeSeats -= application.NumberOfPeople;
+                    }
+                    // Если статус меняется с "Подтверждена" на другой
+                    else if (existingApp.StatusId == 3 && application.StatusId != 3)
+                    {
+                        var tour = _context.Tours.Find(application.TourId);
+                        if (tour != null)
+                        {
+                            // Возвращаем места
+                            tour.FreeSeats += existingApp.NumberOfPeople;
+                        }
+                    }
+
+                    _context.Entry(existingApp).CurrentValues.SetValues(application);
+                    _context.SaveChanges();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка обновления заявки: {ex.Message}", "Ошибка");
+                return false;
+            }
+        }
+
+        public bool DeleteApplication(int applicationId)
+        {
+            try
+            {
+                var application = _context.Applications.Find(applicationId);
+                if (application != null)
+                {
+                    // Если удаляем подтвержденную заявку, возвращаем места
+                    if (application.StatusId == 3)
+                    {
+                        var tour = _context.Tours.Find(application.TourId);
+                        if (tour != null)
+                        {
+                            tour.FreeSeats += application.NumberOfPeople;
+                        }
+                    }
+
+                    _context.Applications.Remove(application);
+                    _context.SaveChanges();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка удаления заявки: {ex.Message}", "Ошибка");
+                return false;
             }
         }
 
