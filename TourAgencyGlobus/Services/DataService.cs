@@ -100,9 +100,14 @@ namespace TourAgencyGlobus.Services
         {
             try
             {
-                _context.Entry(tour).State = EntityState.Modified;
-                _context.SaveChanges();
-                return true;
+                var existingTour = _context.Tours.Find(tour.Id);
+                if (existingTour != null)
+                {
+                    _context.Entry(existingTour).CurrentValues.SetValues(tour);
+                    _context.SaveChanges();
+                    return true;
+                }
+                return false;
             }
             catch (Exception ex)
             {
@@ -250,17 +255,30 @@ namespace TourAgencyGlobus.Services
                         a.Tour.Name.Contains(searchText));
                 }
 
-                // Фильтрация по статусу
+                // Фильтрация по статусу (заменяем switch expression на if-else или switch statement)
                 if (statusFilter != "Все")
                 {
-                    int statusId = statusFilter switch
+                    int statusId = 0;
+
+                    // Используем обычный switch statement вместо switch expression
+                    switch (statusFilter)
                     {
-                        "Новая" => 1,
-                        "В обработке" => 2,
-                        "Подтверждена" => 3,
-                        "Отменена" => 4,
-                        _ => 0
-                    };
+                        case "Новая":
+                            statusId = 1;
+                            break;
+                        case "В обработке":
+                            statusId = 2;
+                            break;
+                        case "Подтверждена":
+                            statusId = 3;
+                            break;
+                        case "Отменена":
+                            statusId = 4;
+                            break;
+                        default:
+                            statusId = 0;
+                            break;
+                    }
 
                     if (statusId > 0)
                     {
