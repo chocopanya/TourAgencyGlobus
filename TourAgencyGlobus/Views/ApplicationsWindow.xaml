@@ -1,27 +1,122 @@
 ﻿<Window x:Class="TourAgencyGlobus.Views.ApplicationsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Заявки" Height="400" Width="600"
+        Title="Управление заявками" Height="600" Width="900"
         WindowStartupLocation="CenterOwner">
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Заявки на туры" 
-                   FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+        <!-- Заголовок -->
+        <TextBlock Grid.Row="0" Text="Управление заявками" 
+                   FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
-        <DataGrid Grid.Row="1" x:Name="dgApplications" 
-                  AutoGenerateColumns="True" IsReadOnly="True"/>
+        <!-- Панель поиска -->
+        <Border Grid.Row="1" Background="#F5F5F5" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="Поиск:" FontWeight="Bold" Margin="0,0,0,5"/>
+                <TextBox x:Name="txtSearch" Height="30" 
+                         TextChanged="TxtSearch_TextChanged">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox">
+                            <Setter Property="Padding" Value="5"/>
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="">
+                                    <Setter Property="Foreground" Value="Gray"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+        </Border>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" 
+        <!-- Панель фильтров -->
+        <Border Grid.Row="2" Background="#F5F5F5" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Фильтр по статусу:" 
+                           FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ComboBox x:Name="cmbStatusFilter" Width="150" Height="30"
+                          SelectionChanged="CmbStatusFilter_SelectionChanged">
+                    <ComboBoxItem Content="Все" IsSelected="True"/>
+                    <ComboBoxItem Content="Новая"/>
+                    <ComboBoxItem Content="В обработке"/>
+                    <ComboBoxItem Content="Подтверждена"/>
+                    <ComboBoxItem Content="Отменена"/>
+                </ComboBox>
+
+                <TextBlock Text="Сортировка:" 
+                           FontWeight="Bold" VerticalAlignment="Center" Margin="20,0,10,0"/>
+                <Button x:Name="btnSortDateDesc" Content="Дата ↓" 
+                        Width="80" Height="30" Margin="0,0,5,0" Click="BtnSortDateDesc_Click"/>
+                <Button x:Name="btnSortDateAsc" Content="Дата ↑" 
+                        Width="80" Height="30" Click="BtnSortDateAsc_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Таблица заявок -->
+        <DataGrid Grid.Row="3" x:Name="dgApplications" 
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  MouseDoubleClick="DgApplications_MouseDoubleClick">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="№" Binding="{Binding Id}" Width="50"/>
+                <DataGridTextColumn Header="Клиент" Binding="{Binding Client.FullName}" Width="150"/>
+                <DataGridTextColumn Header="Тур" Binding="{Binding Tour.Name}" Width="200"/>
+                <DataGridTextColumn Header="Дата заявки" 
+                                    Binding="{Binding ApplicationDate, StringFormat='dd.MM.yyyy'}" 
+                                    Width="100"/>
+                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="120">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Status}" Value="Новая">
+                                    <Setter Property="Foreground" Value="Blue"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="В обработке">
+                                    <Setter Property="Foreground" Value="Orange"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Подтверждена">
+                                    <Setter Property="Foreground" Value="Green"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Status}" Value="Отменена">
+                                    <Setter Property="Foreground" Value="Red"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Кол-во чел." Binding="{Binding NumberOfPeople}" Width="80"/>
+                <DataGridTextColumn Header="Стоимость" 
+                                    Binding="{Binding TotalCost, StringFormat='{}{0:N2} руб.'}" 
+                                    Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Панель кнопок -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" 
                     HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="Обновить" Width="80" Height="30" Margin="5"
+            <Button Content="Создать заявку" Width="120" Height="35" Margin="5"
+                    Background="#4CAF50" Foreground="White" FontWeight="Bold"
+                    Click="BtnCreate_Click"/>
+            <Button Content="Редактировать" Width="120" Height="35" Margin="5"
+                    Background="#2196F3" Foreground="White" FontWeight="Bold"
+                    Click="BtnEdit_Click"/>
+            <Button Content="Удалить" Width="100" Height="35" Margin="5"
+                    Background="#F44336" Foreground="White" FontWeight="Bold"
+                    Click="BtnDelete_Click"/>
+            <Button Content="Обновить" Width="100" Height="35" Margin="5"
                     Click="BtnRefresh_Click"/>
-            <Button Content="Закрыть" Width="80" Height="30" Margin="5"
+            <Button Content="Закрыть" Width="100" Height="35" Margin="5"
                     Click="BtnClose_Click"/>
         </StackPanel>
     </Grid>
