@@ -176,11 +176,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="BoolToSpecialConverter.cs" />
-    <Compile Include="BoolToStatusConverter.cs" />
     <Compile Include="BoolToVisibilityConverter.cs" />
     <Compile Include="Converters\ImagePathConverter.cs" />
     <Compile Include="Services\DataService.cs" />
+    <Compile Include="Views\ApplicationEditWindow.xaml.cs">
+      <DependentUpon>ApplicationEditWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ApplicationsWindow.xaml.cs">
       <DependentUpon>ApplicationsWindow.xaml</DependentUpon>
     </Compile>
@@ -193,6 +194,10 @@
     <Compile Include="Views\TourEditWindow.xaml.cs">
       <DependentUpon>TourEditWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="Views\ApplicationEditWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\DeleteTourWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
